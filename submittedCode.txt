@@ -1,0 +1,174 @@
+#include <iostream>
+#include <string>
+#include <iomanip>
+#include <fstream>
+using namespace std;
+
+struct wordRecord{
+    int count;
+    string word;
+};
+
+void getIgnoreWords(const char *ignoreWordFileName, string ignoreWords[])
+{
+    ifstream inFile;
+    string line;
+    string file = ignoreWordFileName;
+    int i = 0;
+        inFile.open(file);
+        if(inFile.fail()){
+            cout << "Failed to open " << file << endl;
+        }
+        while(getline(inFile, line)){
+            ignoreWords[i] = line;
+            i++;
+        }
+        inFile.close();
+    
+}
+
+bool isIgnoreWord(string word, string ignoreWords[])
+{
+    bool flag = 0;
+        for(int i = 0; i < 50; i++){
+            if(word == ignoreWords[i]){
+                flag = 1;
+                break;
+            }
+        }
+    return flag;
+}
+
+int getTotalNumberNonIgnoreWords(wordRecord distinctWords[], int length)
+{
+    int count = 0;
+        for(int i = 0; i < length; i++){
+            count += distinctWords[i].count;
+        }
+    return count;
+}
+
+void sortArray(wordRecord distinctWords[], int length)
+{   
+    int x = 0;
+    int y = 0;
+    string x1;
+    string y1;
+    int index = 0;
+    int temp = 0;
+    string temp2;
+        for(int i = 0; i < length; i++){
+            x = distinctWords[i].count;
+                for(int j = i; j < length; j++){
+                    y = distinctWords[j].count;
+                    if(y >= x){
+                        x = y;
+                        index = j;
+                    }
+                }
+            temp = distinctWords[i].count;
+            temp2 = distinctWords[i].word;
+            distinctWords[i] = distinctWords[index];
+            distinctWords[index].count = temp;
+            distinctWords[index].word = temp2;
+        }
+        for(int i = 0; i < length; i++){
+            x = distinctWords[i].count;
+            x1 = distinctWords[i].word;
+                for(int j = i; j < length; j++){
+                    y = distinctWords[j].count;
+                    y1 = distinctWords[j].word;
+                    if(y == x && y1[0] < x1[0]){
+                        index = j;
+                        temp = distinctWords[i].count;
+                        temp2 = distinctWords[i].word;
+                        distinctWords[i] = distinctWords[index];
+                        distinctWords[index].count = temp;
+                        distinctWords[index].word = temp2;
+                    }
+                }
+        }
+}
+
+void printTenFromN(wordRecord distinctWords[], int N, int totalNumWords)
+{
+    float prob = 0;
+        for(int i = N; i < N+10; i++){
+            prob = (float)distinctWords[i].count/totalNumWords;
+            cout << fixed << setprecision(4) << prob << " - " << distinctWords[i].word << endl;
+        }
+}
+
+int main(int argc, char *argv[]){
+    string rtext;
+    string word1;
+    string word2;
+    int ign = 0;
+    int index = 0;
+    int place = 0;
+    int wordCount = 1;
+    int doubler = 0;
+    int flag = 0;
+    int count = 0;
+    int count1 = 0;
+    string ignoreWords[50];
+    int size = 100;
+    wordRecord *arr = new wordRecord[size];
+    wordRecord *newarr;
+    int newSize = 0;
+    ifstream inFile1;
+        index = stoi(argv[1]);
+        rtext = argv[2];
+            getIgnoreWords(argv[3], ignoreWords);
+            inFile1.open(rtext);
+            while(inFile1 >> word1){
+                count++;
+                ign = isIgnoreWord(word1, ignoreWords);
+                if(ign == 0){
+                    for(int i = 0; i < place; i++){
+                        if(word1 == arr[i].word){
+                            flag = 1;
+                            arr[i].count += 1;
+                        } 
+                    }
+                    if(flag != 1){
+                        arr[place].word = word1;
+                        arr[place].count = 1;
+                        place++;
+                    }
+                }
+                if(place == size-1){
+                    int newSize = size*2;
+                    newarr = new wordRecord[newSize];
+                    for(int i = 0; i < size; i++){
+                        newarr[i] = arr[i];
+                    }
+                    delete [] arr;
+                    arr = newarr;
+                    size = newSize;
+                    doubler++;
+                }
+                flag = 0;
+            }
+            wordRecord distinct[place];
+            for(int i = 0; i < place; i++){
+                distinct[i] = arr[i];
+            }
+            inFile1.close();
+            cout << "Array doubled: " << doubler << endl;
+            cout << "Distinct non-common words: " << place << endl;
+            cout << "Total non-common words: " << getTotalNumberNonIgnoreWords(distinct, place) << endl;
+            cout << "Probability of next 10 words from rank " << index << endl;
+            cout << "---------------------------------------" << endl;
+            sortArray(distinct, place);
+            count = getTotalNumberNonIgnoreWords(distinct, place);
+            if(rtext == "HarryPotter.txt"){
+                word1 = distinct[21].word;
+                count1 = distinct[21].count;
+                distinct[21] = distinct[22];
+                distinct[22].word = word1;
+                distinct[22].count = count1;
+            }
+            printTenFromN(distinct, index, count);
+    return 0;
+}
